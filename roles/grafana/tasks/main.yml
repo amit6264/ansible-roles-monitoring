@@ -1,0 +1,58 @@
+# 1. Remove old/broken Grafana repo (VERY IMPORTANT)
+- name: Remove old Grafana repo
+  file:
+    path: /etc/apt/sources.list.d/grafana.list
+    state: absent
+
+# 2. Clean apt cache
+- name: Clean apt cache
+  command: apt-get clean
+
+# 3. Install dependencies
+- name: Install dependencies
+  apt:
+    name:
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    state: present
+    update_cache: yes
+
+# 4. Create keyrings directory
+- name: Create keyrings directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+# 5. Add Grafana GPG key (correct way)
+- name: Download Grafana GPG key
+  get_url:
+    url: https://packages.grafana.com/gpg.key
+    dest: /etc/apt/keyrings/grafana.key
+    mode: '0644'
+
+# 6. Add repo (secure method)
+- name: Add Grafana repo
+  apt_repository:
+    repo: "deb [signed-by=/etc/apt/keyrings/grafana.key] https://packages.grafana.com/oss/deb stable main"
+    state: present
+    filename: grafana
+
+# 7. Update apt cache again
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+# 8. Install Grafana
+- name: Install Grafana
+  apt:
+    name: grafana
+    state: present
+
+# 9. Start Grafana
+- name: Start Grafana
+  systemd:
+    name: grafana-server
+    enabled: yes
+    state: started
